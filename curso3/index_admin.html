@@ -1,0 +1,227 @@
+<html><head><base href="https://websimcreationengine.com/music-course-admin/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curso de Música - Área do Administrador</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(45deg, #f3e7e9 0%, #e3eeff 100%);
+  }
+  .container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+    padding: 20px;
+  }
+  header {
+    background: #333;
+    color: #fff;
+    padding-top: 30px;
+    min-height: 70px;
+    border-bottom: #bbb 3px solid;
+  }
+  header h1 {
+    text-align: center;
+    margin: 0;
+    padding-bottom: 20px;
+  }
+  .admin-panel {
+    background: #fff;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  .btn {
+    display: inline-block;
+    background: #333;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  .btn:hover {
+    background: #555;
+  }
+  #lessonList {
+    margin-top: 20px;
+  }
+  .lesson-item {
+    background: #f4f4f4;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .lesson-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .edit-btn, .delete-btn, .move-up-btn, .move-down-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .edit-btn {
+    background: #4CAF50;
+    color: white;
+  }
+  .delete-btn {
+    background: #f44336;
+    color: white;
+  }
+  .move-up-btn, .move-down-btn {
+    background: #2196F3;
+    color: white;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Área do Administrador - Curso de Música</h1>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="admin-panel">
+      <h2>Adicionar/Editar Lição</h2>
+      <form id="lessonForm">
+        <input type="hidden" id="lessonId">
+        <div class="form-group">
+          <label for="lessonTitle">Título da Lição:</label>
+          <input type="text" id="lessonTitle" required>
+        </div>
+        <div class="form-group">
+          <label for="lessonContent">Conteúdo da Lição:</label>
+          <textarea id="lessonContent" rows="5" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="abcNotation">Notação Musical ABC:</label>
+          <textarea id="abcNotation" rows="5"></textarea>
+        </div>
+        <button type="submit" class="btn" id="saveLesson">Salvar Lição</button>
+      </form>
+    </div>
+
+    <div id="lessonList">
+      <h2>Lista de Lições</h2>
+      <!-- Lições serão adicionadas aqui dinamicamente -->
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const lessonForm = document.getElementById('lessonForm');
+      const lessonList = document.getElementById('lessonList');
+      const lessonTitleInput = document.getElementById('lessonTitle');
+      const lessonContentInput = document.getElementById('lessonContent');
+      const abcNotationInput = document.getElementById('abcNotation');
+      const lessonIdInput = document.getElementById('lessonId');
+      let lessons = JSON.parse(localStorage.getItem('musicLessons')) || [];
+
+      function saveLessonsToStorage() {
+        localStorage.setItem('musicLessons', JSON.stringify(lessons));
+      }
+
+      function renderLessons() {
+        lessonList.innerHTML = '<h2>Lista de Lições</h2>';
+        lessons.forEach((lesson, index) => {
+          const lessonItem = document.createElement('div');
+          lessonItem.className = 'lesson-item';
+          lessonItem.innerHTML = `
+            <span>${lesson.title}</span>
+            <div class="lesson-actions">
+              <button class="edit-btn" data-index="${index}">Editar</button>
+              <button class="delete-btn" data-index="${index}">Excluir</button>
+              <button class="move-up-btn" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+              <button class="move-down-btn" data-index="${index}" ${index === lessons.length - 1 ? 'disabled' : ''}>↓</button>
+            </div>
+          `;
+          lessonList.appendChild(lessonItem);
+        });
+      }
+
+      function clearForm() {
+        lessonTitleInput.value = '';
+        lessonContentInput.value = '';
+        abcNotationInput.value = '';
+        lessonIdInput.value = '';
+      }
+
+      lessonForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const lessonId = lessonIdInput.value;
+        const lesson = {
+          title: lessonTitleInput.value,
+          content: lessonContentInput.value,
+          abcNotation: abcNotationInput.value
+        };
+
+        if (lessonId) {
+          // Editando uma lição existente
+          lessons[lessonId] = lesson;
+        } else {
+          // Adicionando uma nova lição
+          lessons.push(lesson);
+        }
+
+        saveLessonsToStorage();
+        renderLessons();
+        clearForm();
+      });
+
+      lessonList.addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-btn')) {
+          const index = e.target.getAttribute('data-index');
+          const lesson = lessons[index];
+          lessonTitleInput.value = lesson.title;
+          lessonContentInput.value = lesson.content;
+          abcNotationInput.value = lesson.abcNotation || '';
+          lessonIdInput.value = index;
+        } else if (e.target.classList.contains('delete-btn')) {
+          const index = e.target.getAttribute('data-index');
+          lessons.splice(index, 1);
+          saveLessonsToStorage();
+          renderLessons();
+        } else if (e.target.classList.contains('move-up-btn')) {
+          const index = parseInt(e.target.getAttribute('data-index'));
+          if (index > 0) {
+            [lessons[index], lessons[index - 1]] = [lessons[index - 1], lessons[index]];
+            saveLessonsToStorage();
+            renderLessons();
+          }
+        } else if (e.target.classList.contains('move-down-btn')) {
+          const index = parseInt(e.target.getAttribute('data-index'));
+          if (index < lessons.length - 1) {
+            [lessons[index], lessons[index + 1]] = [lessons[index + 1], lessons[index]];
+            saveLessonsToStorage();
+            renderLessons();
+          }
+        }
+      });
+
+      renderLessons();
+    });
+  </script>
+</body></html>
