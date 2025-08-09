@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editor ABC - Escrever, Tocar, Visualizar, Transpor</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-min.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Editor ABC</h1>
+      <p>Escreva, visualize, toque e transpõe notação musical ABC</p>
+    </header>
+
+    <main class="app">
+      <section class="editor-pane">
+        <div class="toolbar">
+          <div class="group">
+            <label for="transpose">Transposição (semitons)</label>
+            <input id="transpose" type="range" min="-12" max="12" step="1" value="0" />
+            <output id="transposeValue">0</output>
+          </div>
+          <div class="group">
+            <label for="tempo">Andamento (QPM)</label>
+            <input id="tempo" type="range" min="40" max="220" step="1" value="120" />
+            <output id="tempoValue">120</output>
+          </div>
+          <div class="group buttons">
+            <button id="btnRender" title="Renderizar partitura">Renderizar</button>
+            <button id="btnClear" title="Limpar">Limpar</button>
+            <label class="file-label" for="fileInput">Importar ABC</label>
+            <input id="fileInput" type="file" accept=".abc,.txt" />
+            <button id="btnDownloadAbc">Baixar ABC</button>
+            <button id="btnDownloadSvg">Baixar SVG</button>
+          </div>
+        </div>
+
+        <textarea id="abcInput" spellcheck="false"></textarea>
+      </section>
+
+      <section class="score-pane">
+        <div id="paper" class="paper" aria-label="Partitura"></div>
+        <div id="audio" class="audio"></div>
+        <div id="messages" class="messages" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span>Powered by ABCJS</span>
+      <a href="https://abcnotation.com/" target="_blank" rel="noopener">O que é ABC?</a>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
