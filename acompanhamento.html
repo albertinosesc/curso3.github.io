@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Acompanhamento Musical</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Reset e base */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif; display: flex; }
+
+    /* Barra lateral */
+    .sidebar {
+      width: 260px;
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar h2 { margin: 0 0 15px 0; font-size: 22px; user-select: none; }
+    .sidebar button {
+      background: #34495e;
+      border: none;
+      color: #ecf0f1;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 15px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar button:hover { background: #3f5870; }
+    .sidebar button.danger-btn { background: #c0392b; }
+    .sidebar button.danger-btn:hover { background: #e74c3c; }
+
+    /* Conteúdo principal */
+    .main-content { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+    .table-container { flex-grow: 1; overflow: auto; border: 1px solid #ccc; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; min-width: 600px; }
+    th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: center; user-select: text; }
+    th.editable-header { background-color: #f4f6f7; cursor: text; }
+    #musicTable tbody tr { cursor: pointer; }
+    td[contenteditable="true"] { cursor: pointer; }
+    .selected-row { background-color: #ffecb3; }
+
+    /* Paginação */
+    .pagination-controls { margin-top: 12px; display: flex; align-items: center; gap: 8px; user-select: none; }
+    .pagination-controls select { padding: 4px 6px; }
+    .pagination-controls button {
+      cursor: pointer; border: 1px solid #34495e; background: white; color: #34495e;
+      padding: 4px 8px; border-radius: 4px; font-size: 14px;
+    }
+    .pagination-controls button:hover { background: #34495e; color: white; }
+
+    /* Gráfico */
+    #chartContainer { margin-top: 18px; height: 280px; display: none; }
+
+    /* Dialogs (popups de sheets) */
+    .dialog {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: white; border: 1px solid #34495e; padding: 20px; z-index: 1100;
+      border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.25); width: 320px; display: none;
+    }
+    .dialog h3 { margin-top: 0; }
+    .dialog button { padding: 8px 14px; border: none; border-radius: 5px; cursor: pointer; }
+    .dialog .confirm-btn { background: #27ae60; color: white; }
+    .dialog .danger-btn { background: #c0392b; color: white; }
+    .dialog .cancel-btn { background: #bdc3c7; color: black; }
+    .dialog .cancel-btn:hover { background: #a4acb1; }
+
+    /* Popup de célula (única definição, sem duplicados) */
+    #cellPopup {
+      position: fixed;
+      top: 100px;
+      left: 100px;
+      width: 360px;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      background: white;
+      border: 2px solid #34495e;
+      border-radius: 8px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.25);
+      display: none;
+      z-index: 1200;
+      padding: 0;
+    }
+    #cellPopup .popup-header {
+      padding: 15px; background: #34495e; color: white; cursor: move;
+      border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center;
+    }
+    #cellPopup .popup-header h3 { margin: 0; color: white; }
+    #cellPopup .popup-content { padding: 15px; }
+    #cellPopup .popup-close { background: transparent; border: none; font-size: 26px; cursor: pointer; color: white; }
+
+    /* Notas divididas por oitavas */
+    .notes-grid { display: flex; flex-wrap: wrap; overflow-x: auto; gap: 10px; margin-bottom: 10px; justify-content: center; }
+    .note-btn { background-color: #e0e0e0; border: 1px solid #ccc; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .note-btn:hover { background-color: #d0d0d0; }
+
+    /* Custom input textarea */
+    #customTextInput { width: 100%; height: 60px; margin-top: 5px; resize: vertical; font-size: 14px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+
+    /* Anexos */
+    .attachments-list { margin-top: 10px; max-height: 80px; overflow-y: auto; border: 1px solid #ddd; padding: 6px; border-radius: 4px; }
+    .attachment-item { font-size: 13px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .attachment-item button { background: #e74c3c; border: none; color: white; cursor: pointer; border-radius: 3px; padding: 0 5px; font-size: 12px; }
+    .attachment-item button:hover { background: #c0392b; }
+
+    /* Ações do popup */
+    .popup-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+    .popup-actions button { cursor: pointer; padding: 8px 14px; border: none; border-radius: 5px; font-size: 14px; }
+    .confirm-btn { background: #27ae60; color: white; }
+    .confirm-btn:hover { background: #219150; }
+    .cancel-btn { background: #bdc3c7; }
+    .cancel-btn:hover { background: #a4acb1; }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2><i class="fas fa-music"></i> Acompanhamento</h2>
+    <button onclick="addRow()"><i class="fas fa-plus-circle"></i> Adicionar Linha</button>
+    <button onclick="deleteSelectedRow()"><i class="fas fa-minus-circle"></i> Excluir Linha</button>
+    <button onclick="addColumn()"><i class="fas fa-plus-square"></i> Adicionar Coluna</button>
+    <button onclick="showDeleteColumnDialog()"><i class="fas fa-minus-square"></i> Excluir Coluna</button>
+    <button onclick="clearTable()" class="danger-btn"><i class="fas fa-broom"></i> Limpar Tudo (Local)</button>
+    <button onclick="saveData()"><i class="fas fa-save"></i> Salvar Localmente</button>
+    <button onclick="importCSV()"><i class="fas fa-file-upload"></i> Importar CSV</button>
+    <button onclick="exportCSV()"><i class="fas fa-file-download"></i> Exportar CSV</button>
+    <button onclick="toggleChart()"><i class="fas fa-chart-bar"></i> Gráfico de Progresso</button>
+
+    <hr style="margin:15px 0; border-color: #3a5068;">
+
+    <h3 style="margin-bottom:8px;">Google Sheets</h3>
+    <input list="sheetNames" id="sheetNameInput" placeholder="Nome da Guia" autocomplete="off" style="padding:6px; border-radius:4px; border:none; margin-bottom:10px; width:100%; box-sizing:border-box;">
+    <datalist id="sheetNames"></datalist>
+
+    <button onclick="refreshSheetNames()"><i class="fas fa-sync-alt"></i> Atualizar Guias</button>
+    <button onclick="showCreateSheetDialog()"><i class="fas fa-plus"></i> Criar Guia</button>
+    <button onclick="showRenameSheetDialog()"><i class="fas fa-edit"></i> Renomear Guia</button>
+    <button onclick="showDeleteSheetDialog()" class="danger-btn"><i class="fas fa-trash"></i> Excluir Guia</button>
+
+    <button onclick="exportToSheets()"><i class="fas fa-paper-plane"></i> Enviar para Sheets</button>
+    <button onclick="importFromSheets()"><i class="fas fa-download"></i> Importar do Sheets</button>
+  </div>
+
+  <div class="main-content">
+    <div class="table-container">
+      <table id="musicTable">
+        <thead>
+          <tr>
+            <th contenteditable="true" class="editable-header">Música</th>
+            <th contenteditable="true" class="editable-header">Trombone</th>
+            <th contenteditable="true" class="editable-header">Violão</th>
+            <th contenteditable="true" class="editable-header">Cello</th>
+            <th contenteditable="true" class="editable-header">Violino</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td contenteditable="true">Atirei o pau no gato</td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-controls">
+      <label for="rowsPerPageSelect">Linhas por página:</label>
+      <select id="rowsPerPageSelect" onchange="setRowsPerPage(this.value)">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="9999">Todas</option>
+      </select>
+      <button onclick="prevPage()"><i class="fas fa-chevron-left"></i> Anterior</button>
+      <span id="pageInfo">Página 1 de 1</span>
+      <button onclick="nextPage()">Próxima <i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div id="chartContainer">
+      <canvas id="progressChart"></canvas>
+    </div>
+  </div>
+
+  <div id="cellPopup" role="dialog" aria-modal="true" aria-labelledby="cellPopupTitle">
+    <div class="popup-header">
+      <h3 id="cellPopupTitle">Editar Célula</h3>
+      <button class="popup-close" onclick="closePopup()" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="popup-content">
+      <div class="notes-grid" id="notesGrid"></div>
+      <textarea id="customTextInput" placeholder="Digite algo personalizado..." rows="3"></textarea>
+
+      <div style="margin-top: 10px;">
+        <label for="fileInput">Anexar Arquivos (múltiplos):</label>
+        <input type="file" id="fileInput" multiple>
+        <div class="attachments-list" id="attachmentsList"></div>
+      </div>
+
+      <div class="popup-actions">
+        <button class="confirm-btn" onclick="confirmSelection()">Confirmar</button>
+        <button class="cancel-btn" onclick="closePopup()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deleteColumnDialog" class="dialog">
+    <h3>Excluir Coluna</h3>
+    <p>Selecione a coluna que deseja excluir:</p>
+    <select id="deleteColumnSelect" style="width:100%; padding:6px; margin-bottom:15px;"></select>
+    <div style="text-align:right;">
+      <button onclick="confirmDeleteColumn()" class="danger-btn" style="margin-right:8px;">Excluir</button>
+      <button onclick="closeDialog('deleteColumnDialog')">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="createSheetDialog" class="dialog">
+    <h3>Criar Nova Guia</h3>
+    <label for="newSheetName">Nome da nova guia:</label>
+    <input type="text" id="newSheetName" style="width:100%; padding:6px; margin:10px 0;" placeholder="Ex: Relatório 2025">
+    <div style="text-align:right;">
+      <button onclick="createSheet()" class="confirm-btn" style="margin-right:8px;">Criar</button>
+      <button onclick="closeDialog('createSheetDialog')">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="renameSheetDialog" class="dialog">
+    <h3>Renomear Guia</h3>
+    <p>Renomear a guia: "<span id="currentSheetName" style="font-weight:bold;"></span>"</p>
+    <label for="renamedSheetName">Novo nome:</label>
+    <input type="text" id="renamedSheetName" style="width:100%; padding:6px; margin:10px 0;">
+    <div style="text-align:right;">
+      <button onclick="renameSheet()" class="confirm-btn" style="margin-right:8px;">Renomear</button>
+      <button onclick="closeDialog('renameSheetDialog')">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="deleteSheetDialog" class="dialog">
+    <h3>Excluir Guia</h3>
+    <p>Tem certeza que deseja excluir a guia "<span id="sheetToDelete" style="font-weight:bold; color:red;"></span>"?</p>
+    <p style="color:red;">Esta ação é irreversível no Google Sheets.</p>
+    <div style="text-align:right;">
+      <button onclick="deleteSheet()" class="danger-btn" style="margin-right:8px;">Excluir</button>
+      <button onclick="closeDialog('deleteSheetDialog')">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Variáveis globais
+    let selectedCell = null;
+    let selectedRow = null;
+    let attachmentsMap = new Map(); // Sessão atual apenas
+    let rowsPerPage = 10;
+    let currentPage = 1;
+    let totalPages = 1;
+    let chart = null;
+    let isDragging = false;
+    let dragOffsetX = 0, dragOffsetY = 0;
+
+    // Notas e oitavas
+    const notes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const octaves = [1,2,3,4,5,6,7];
+
+    const isGasAvailable = typeof google !== 'undefined' && google.script && google.script.run;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      addCellClickListener();
+
+      document.getElementById('musicTable').addEventListener('click', (e) => {
+        const row = e.target.closest('tbody tr');
+        if (row) {
+          document.querySelectorAll('#musicTable tbody tr').forEach(r => r.classList.remove('selected-row'));
+          row.classList.add('selected-row');
+          selectedRow = row;
+        }
+      });
+
+      buildNotesGrid();
+      loadData();
+      updatePagination();
+      setupFileInput();
+      initChart();
+      refreshSheetNames();
+
+      // Arrastar popup
+      const popup = document.getElementById('cellPopup');
+      const popupHeader = popup.querySelector('.popup-header');
+      popupHeader.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        const rect = popup.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        popup.style.cursor = 'grabbing';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const x = e.clientX - dragOffsetX;
+        const y = e.clientY - dragOffsetY;
+        const maxX = window.innerWidth - popup.offsetWidth;
+        const maxY = window.innerHeight - popup.offsetHeight;
+        popup.style.left = `${Math.min(Math.max(0, x), Math.max(0, maxX))}px`;
+        popup.style.top = `${Math.min(Math.max(0, y), Math.max(0, maxY))}px`;
+      });
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        document.getElementById('cellPopup').style.cursor = '';
+      });
+
+      // Acessibilidade básica: ESC fecha, Ctrl+Enter confirma
+      document.addEventListener('keydown', (e) => {
+        const popupVisible = document.getElementById('cellPopup').style.display === 'block';
+        if (!popupVisible) return;
+        if (e.key === 'Escape') closePopup();
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) confirmSelection();
+      });
+    });
+
+    function addCellClickListener() {
+      const table = document.getElementById('musicTable');
+      table.addEventListener('click', (e) => {
+        const td = e.target.closest('td[contenteditable="true"]');
+        if (td) {
+          selectedCell = td;
+          document.querySelectorAll('#musicTable td[contenteditable="true"]').forEach(cell => { cell.style.backgroundColor = ''; });
+          td.style.backgroundColor = '#d0e8ff';
+          openPopup(td);
+        }
+      });
+    }
+
+    function buildNotesGrid() {
+      const notesGrid = document.getElementById('notesGrid');
+      notesGrid.innerHTML = '';
+      notes.forEach(note => {
+        octaves.forEach(oct => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'note-btn';
+          btn.textContent = `${note}${oct}`;
+          btn.onclick = () => {
+            const input = document.getElementById('customTextInput');
+            input.value += `${btn.textContent} `;
+            input.focus();
+          };
+          notesGrid.appendChild(btn);
+        });
+      });
+    }
+
+    function openPopup(td) {
+      selectedCell = td;
+      const cellPopup = document.getElementById('cellPopup');
+      const customTextInput = document.getElementById('customTextInput');
+      const attachmentsList = document.getElementById('attachmentsList');
+
+      customTextInput.value = td.textContent || '';
+      attachmentsList.innerHTML = '';
+
+      const key = getCellKey(td);
+      const files = attachmentsMap.get(key) || [];
+      files.forEach(file => {
+        const div = document.createElement('div');
+        div.className = 'attachment-item';
+        const a = document.createElement('a');
+        a.href = file.url;
+        a.target = '_blank';
+        a.textContent = file.name;
+        div.appendChild(a);
+        attachmentsList.appendChild(div);
+      });
+
+      if (!cellPopup.style.left && !cellPopup.style.top) {
+        cellPopup.style.left = '100px';
+        cellPopup.style.top = '100px';
+      }
+      cellPopup.style.display = 'block';
+      customTextInput.focus();
+    }
+
+    function closePopup() {
+      const cellPopup = document.getElementById('cellPopup');
+      cellPopup.style.display = 'none';
+      const fileInput = document.getElementById('fileInput');
+      fileInput.value = '';
+    }
+
+    function confirmSelection() {
+      if (!selectedCell) return;
+      const customTextInput = document.getElementById('customTextInput');
+      selectedCell.textContent = customTextInput.value.trim();
+      saveData();
+      closePopup();
+    }
+
+    function getCellKey(td) {
+      // Chave estável baseada em índices absolutos (não depende de display/paginação)
+      const tr = td.parentElement;
+      const tbody = tr.parentElement;
+      const rowIndex = Array.from(tbody.children).indexOf(tr);
+      const cellIndex = Array.from(tr.children).indexOf(td);
+      return `${rowIndex}_${cellIndex}`;
+    }
+
+    function setupFileInput() {
+      const fileInput = document.getElementById('fileInput');
+      fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    function handleFileSelect(event) {
+      if (!selectedCell) {
+        alert('Selecione uma célula para anexar arquivos.');
+        event.target.value = '';
+        return;
+      }
+      const files = event.target.files;
+      const key = getCellKey(selectedCell);
+      const arr = attachmentsMap.get(key) || [];
+      for (let file of files) {
+        // Observação: URLs de blob são temporárias e não persistem após recarregar a página
+        const url = URL.createObjectURL(file);
+        arr.push({ name: file.name, url });
+      }
+      attachmentsMap.set(key, arr);
+      renderAttachmentsList(key);
+      // Não persistimos anexos no localStorage, pois os blob URLs expiram
+      event.target.value = '';
+    }
+
+    function renderAttachmentsList(key) {
+      const attachmentsList = document.getElementById('attachmentsList');
+      attachmentsList.innerHTML = '';
+      const arr = attachmentsMap.get(key) || [];
+      arr.forEach(file => {
+        const div = document.createElement('div');
+        div.className = 'attachment-item';
+        const a = document.createElement('a');
+        a.href = file.url;
+        a.target = '_blank';
+        a.textContent = file.name;
+        div.appendChild(a);
+        attachmentsList.appendChild(div);
+      });
+    }
+
+    function addRow() {
+      const tbody = document.querySelector('#musicTable tbody');
+      const cols = document.querySelectorAll('#musicTable thead th').length;
+      const tr = document.createElement('tr');
+      for (let i = 0; i < cols; i++) {
+        const td = document.createElement('td');
+        td.setAttribute('contenteditable', 'true');
+        td.setAttribute('tabindex', '0');
+        td.textContent = '';
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+      saveData();
+      updatePagination();
+    }
+
+    function deleteSelectedRow() {
+      if (selectedRow && selectedRow.parentNode) {
+        if (!confirm('Tem certeza que deseja excluir a linha selecionada?')) return;
+        selectedRow.remove();
+        selectedRow = null;
+        document.querySelectorAll('#musicTable tbody tr').forEach(row => row.classList.remove('selected-row'));
+        saveData();
+        updatePagination();
+        alert('Linha excluída com sucesso!');
+      } else {
+        alert('Por favor, selecione uma linha clicando nela antes de tentar excluir.');
+      }
+    }
+
+    function addColumn() {
+      const table = document.getElementById('musicTable');
+      const headerRow = table.querySelector('thead tr');
+      const th = document.createElement('th');
+      th.setAttribute('contenteditable', 'true');
+      th.textContent = 'Nova Coluna';
+      headerRow.appendChild(th);
+      table.querySelectorAll('tbody tr').forEach(tr => {
+        const td = document.createElement('td');
+        td.setAttribute('contenteditable', 'true');
+        td.setAttribute('tabindex', '0');
+        td.textContent = '';
+        tr.appendChild(td);
+      });
+      saveData();
+    }
+
+    function showDeleteColumnDialog() {
+      const select = document.getElementById('deleteColumnSelect');
+      select.innerHTML = '';
+      const headers = document.querySelectorAll('#musicTable thead th[contenteditable="true"]');
+      headers.forEach((th, idx) => {
+        const option = document.createElement('option');
+        option.value = idx;
+        option.textContent = th.textContent || `Coluna ${idx + 1}`;
+        select.appendChild(option);
+      });
+      document.getElementById('deleteColumnDialog').style.display = 'block';
+    }
+
+    function confirmDeleteColumn() {
+      const select = document.getElementById('deleteColumnSelect');
+      const index = parseInt(select.value);
+      if (Number.isNaN(index)) { alert('Selecione uma coluna para excluir.'); return; }
+      const table = document.getElementById('musicTable');
+      const headerRow = table.querySelector('thead tr');
+      if (index < 0 || index >= headerRow.children.length) return;
+      headerRow.deleteCell(index);
+      table.querySelectorAll('tbody tr').forEach(tr => { if (tr.children[index]) tr.deleteCell(index); });
+      document.getElementById('deleteColumnDialog').style.display = 'none';
+      saveData();
+    }
+
+    function clearTable() {
+      if (!confirm('Deseja limpar toda a tabela? Os dados serão removidos localmente.')) return;
+      const tbody = document.querySelector('#musicTable tbody');
+      tbody.innerHTML = '';
+      saveData();
+      updatePagination();
+    }
+
+    function saveData() {
+      const table = document.getElementById('musicTable');
+      const data = [];
+      const headers = [];
+      table.querySelectorAll('thead th').forEach(th => headers.push(th.textContent));
+      data.push(headers);
+      table.querySelectorAll('tbody tr').forEach(tr => {
+        const row = [];
+        tr.querySelectorAll('td').forEach(td => row.push(td.textContent));
+        data.push(row);
+      });
+      localStorage.setItem('musicTableData', JSON.stringify(data));
+      // Não persistimos attachmentsMap (URLs de blob expiram).
+    }
+
+    function loadData() {
+      const raw = localStorage.getItem('musicTableData');
+      if (!raw) return;
+      let data;
+      try { data = JSON.parse(raw); } catch { return; }
+      if (!Array.isArray(data) || data.length < 1) return;
+
+      const table = document.getElementById('musicTable');
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+      thead.innerHTML = '';
+      tbody.innerHTML = '';
+
+      const trHead = document.createElement('tr');
+      data[0].forEach(h => {
+        const th = document.createElement('th');
+        th.setAttribute('contenteditable', 'true');
+        th.textContent = h;
+        trHead.appendChild(th);
+      });
+      thead.appendChild(trHead);
+
+      for (let i = 1; i < data.length; i++) {
+        const tr = document.createElement('tr');
+        data[i].forEach(cellText => {
+          const td = document.createElement('td');
+          td.setAttribute('contenteditable', 'true');
+          td.setAttribute('tabindex', '0');
+          td.textContent = cellText;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+    }
+
+    function updatePagination() {
+      const tbody = document.querySelector('#musicTable tbody');
+      const allRows = Array.from(tbody.querySelectorAll('tr'));
+      const totalRows = allRows.length;
+      totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+      if (currentPage > totalPages) currentPage = totalPages;
+      document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${totalPages}`;
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      allRows.forEach((tr, idx) => { tr.style.display = (idx >= start && idx < end) ? '' : 'none'; });
+    }
+
+    function setRowsPerPage(value) { rowsPerPage = parseInt(value, 10); currentPage = 1; updatePagination(); }
+    function nextPage() { if (currentPage < totalPages) { currentPage++; updatePagination(); } }
+    function prevPage() { if (currentPage > 1) { currentPage--; updatePagination(); } }
+
+    function importCSV() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv,text/csv';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = evt => { loadTableFromCSV(evt.target.result); };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function loadTableFromCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length === 0) { alert('CSV vazio.'); return; }
+      const table = document.getElementById('musicTable');
+      table.querySelector('thead').innerHTML = '';
+      table.querySelector('tbody').innerHTML = '';
+      const headers = lines[0].split(',');
+      const trHead = document.createElement('tr');
+      headers.forEach(h => {
+        const th = document.createElement('th');
+        th.setAttribute('contenteditable', 'true');
+        th.textContent = h.replace(/^"|"$/g, '');
+        trHead.appendChild(th);
+      });
+      table.querySelector('thead').appendChild(trHead);
+      for (let i = 1; i < lines.length; i++) {
+        const tr = document.createElement('tr');
+        const cols = lines[i].match(/(?:\"(?:[^\"]|\")*\")+|[^,]+/g) || lines[i].split(',');
+        cols.forEach(c => {
+          const td = document.createElement('td');
+          td.setAttribute('contenteditable', 'true');
+          td.textContent = c.replace(/^"|"$/g, '').replace(/\"/g, '"');
+          tr.appendChild(td);
+        });
+        table.querySelector('tbody').appendChild(tr);
+      }
+      saveData();
+      updatePagination();
+    }
+
+    function exportCSV() {
+      const table = document.getElementById('musicTable');
+      let csv = '';
+      const rows = [...table.querySelectorAll('thead tr, tbody tr')];
+      rows.forEach(tr => {
+        const cells = [...tr.querySelectorAll('th, td')];
+        const row = cells.map(td => `"${(td.textContent || '').replace(/"/g, '""')}"`).join(',');
+        csv += row + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'tabela.csv';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('progressChart');
+      if (!ctx) return;
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Exemplo 1', 'Exemplo 2', 'Exemplo 3'],
+          datasets: [{ label: 'Progresso', data: [12, 19, 3], backgroundColor: ['rgba(75,192,192,0.6)', 'rgba(255,159,64,0.6)', 'rgba(153,102,255,0.6)'] }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    function toggleChart() {
+      const container = document.getElementById('chartContainer');
+      if (!container) return;
+      container.style.display = (container.style.display === 'none' || container.style.display === '') ? 'block' : 'none';
+    }
+
+    // --- Integração com Google Sheets (com guardas) ---
+    function onSheetError(error) {
+      alert('Erro ao comunicar com Google Sheets: ' + (error && error.message ? error.message : error));
+      console.error('Erro Google Sheets:', error);
+      disableSheetButtons(false);
+    }
+
+    function refreshSheetNames() {
+      if (!isGasAvailable) { populateSheetNamesFromLocal(); return; }
+      google.script.run.withSuccessHandler(exibirGuias).withFailureHandler(onSheetError).listarGuias();
+    }
+
+    function populateSheetNamesFromLocal() {
+      const datalist = document.getElementById('sheetNames');
+      datalist.innerHTML = '';
+      const localNames = JSON.parse(localStorage.getItem('gsheet_names') || '[]');
+      localNames.forEach(name => { const option = document.createElement('option'); option.value = name; datalist.appendChild(option); });
+      const input = document.getElementById('sheetNameInput');
+      const last = localStorage.getItem('lastSelectedSheet');
+      if (localNames.length > 0) { input.value = (last && localNames.includes(last)) ? last : localNames[0]; } else { input.value = ''; }
+    }
+
+    function exibirGuias(nomesDasGuias) {
+      const datalist = document.getElementById('sheetNames');
+      datalist.innerHTML = '';
+      nomesDasGuias.forEach(name => { const option = document.createElement('option'); option.value = name; datalist.appendChild(option); });
+      const sheetNameInput = document.getElementById('sheetNameInput');
+      const lastSelectedSheet = localStorage.getItem('lastSelectedSheet');
+      if (nomesDasGuias.length > 0) {
+        if (lastSelectedSheet && nomesDasGuias.includes(lastSelectedSheet)) sheetNameInput.value = lastSelectedSheet; else sheetNameInput.value = nomesDasGuias[0];
+      } else {
+        sheetNameInput.value = '';
+      }
+    }
+
+    function showCreateSheetDialog() { document.getElementById('createSheetDialog').style.display = 'block'; document.getElementById('newSheetName').value = ''; }
+
+    function createSheet() {
+      const newSheetName = document.getElementById('newSheetName').value.trim();
+      if (!newSheetName) { alert('Por favor, insira um nome para a nova guia.'); return; }
+      if (!confirm(`Deseja criar a guia "${newSheetName}" no Google Sheets?`)) return;
+      disableSheetButtons(true);
+      if (!isGasAvailable) {
+        // Modo local: simula criação
+        const names = new Set(JSON.parse(localStorage.getItem('gsheet_names') || '[]'));
+        names.add(newSheetName);
+        localStorage.setItem('gsheet_names', JSON.stringify([...names]));
+        criarGuiaSucesso(newSheetName);
+        return;
+      }
+      google.script.run.withSuccessHandler(() => criarGuiaSucesso(newSheetName)).withFailureHandler(onSheetError).criarGuia(newSheetName);
+      closeDialog('createSheetDialog');
+    }
+
+    function criarGuiaSucesso(nomeCriado) {
+      alert(`Guia "${nomeCriado}" criada com sucesso!`);
+      refreshSheetNames();
+      localStorage.setItem('lastSelectedSheet', nomeCriado);
+      document.getElementById('sheetNameInput').value = nomeCriado;
+      disableSheetButtons(false);
+    }
+
+    function showRenameSheetDialog() {
+      const sheetNameInput = document.getElementById('sheetNameInput');
+      const currentSheetName = sheetNameInput.value.trim();
+      if (!currentSheetName) { alert('Por favor, selecione ou digite o nome da guia atual.'); return; }
+      document.getElementById('currentSheetName').textContent = currentSheetName;
+      document.getElementById('renamedSheetName').value = currentSheetName;
+      document.getElementById('renameSheetDialog').style.display = 'block';
+    }
+
+    function renameSheet() {
+      const oldSheetName = document.getElementById('currentSheetName').textContent.trim();
+      const newSheetName = document.getElementById('renamedSheetName').value.trim();
+      if (!oldSheetName || !newSheetName) { alert('Nomes de guia inválidos.'); return; }
+      if (oldSheetName === newSheetName) { alert('O novo nome é igual ao nome antigo.'); closeDialog('renameSheetDialog'); return; }
+      if (!confirm(`Deseja renomear a guia "${oldSheetName}" para "${newSheetName}"?`)) return;
+      disableSheetButtons(true);
+      if (!isGasAvailable) {
+        const names = new Set(JSON.parse(localStorage.getItem('gsheet_names') || '[]'));
+        if (names.has(oldSheetName)) { names.delete(oldSheetName); names.add(newSheetName); }
+        localStorage.setItem('gsheet_names', JSON.stringify([...names]));
+        renomearGuiaSucesso(newSheetName);
+        closeDialog('renameSheetDialog');
+        return;
+      }
+      google.script.run.withSuccessHandler(() => renomearGuiaSucesso(newSheetName)).withFailureHandler(onSheetError).renomearGuia(oldSheetName, newSheetName);
+      closeDialog('renameSheetDialog');
+    }
+
+    function renomearGuiaSucesso(novoNome) {
+      alert(`Guia renomeada para "${novoNome}" com sucesso!`);
+      refreshSheetNames();
+      localStorage.setItem('lastSelectedSheet', novoNome);
+      document.getElementById('sheetNameInput').value = novoNome;
+      disableSheetButtons(false);
+    }
+
+    function showDeleteSheetDialog() {
+      const sheetNameInput = document.getElementById('sheetNameInput');
+      const sheetToDeleteName = sheetNameInput.value.trim();
+      if (!sheetToDeleteName) { alert('Por favor, selecione ou digite o nome da guia.'); return; }
+      document.getElementById('sheetToDelete').textContent = sheetToDeleteName;
+      document.getElementById('deleteSheetDialog').style.display = 'block';
+    }
+
+    function deleteSheet() {
+      const sheetToDeleteName = document.getElementById('sheetToDelete').textContent.trim();
+      if (!sheetToDeleteName) { alert('Nome da guia inválido.'); return; }
+      if (!confirm(`ATENÇÃO: Excluir a guia "${sheetToDeleteName}" é irreversível. Continuar?`)) return;
+      disableSheetButtons(true);
+      if (!isGasAvailable) {
+        const names = new Set(JSON.parse(localStorage.getItem('gsheet_names') || '[]'));
+        names.delete(sheetToDeleteName);
+        localStorage.setItem('gsheet_names', JSON.stringify([...names]));
+        deletarGuiaSucesso(sheetToDeleteName);
+        closeDialog('deleteSheetDialog');
+        return;
+      }
+      google.script.run.withSuccessHandler(() => deletarGuiaSucesso(sheetToDeleteName)).withFailureHandler(onSheetError).deletarGuia(sheetToDeleteName);
+      closeDialog('deleteSheetDialog');
+    }
+
+    function deletarGuiaSucesso(nomeDeletado) {
+      alert(`Guia "${nomeDeletado}" excluída com sucesso!`);
+      refreshSheetNames();
+      localStorage.removeItem('lastSelectedSheet');
+      document.getElementById('sheetNameInput').value = '';
+      disableSheetButtons(false);
+    }
+
+    function exportToSheets() {
+      const sheetName = document.getElementById('sheetNameInput').value.trim();
+      if (!sheetName) { alert('Informe o nome da guia.'); return; }
+      if (!confirm(`Deseja enviar os dados para a guia "${sheetName}"? Isso irá sobrescrever os dados existentes.`)) return;
+      disableSheetButtons(true);
+      const table = document.getElementById('musicTable');
+      const dataToExport = [];
+      const headerRow = [];
+      table.querySelectorAll('thead th').forEach(th => headerRow.push(th.textContent));
+      dataToExport.push(headerRow);
+      table.querySelectorAll('tbody tr').forEach(tr => {
+        const rowData = [];
+        tr.querySelectorAll('td').forEach(td => rowData.push(td.textContent));
+        dataToExport.push(rowData);
+      });
+      if (!isGasAvailable) {
+        // Modo local: simula envio
+        alert('Simulação local: dados "enviados".');
+        disableSheetButtons(false);
+        return;
+      }
+      google.script.run.withSuccessHandler(enviarDadosSucesso).withFailureHandler(onSheetError).enviarDados(dataToExport, sheetName);
+    }
+
+    function enviarDadosSucesso() { alert('Dados enviados para o Google Sheets com sucesso!'); disableSheetButtons(false); }
+
+    function importFromSheets() {
+      const sheetName = document.getElementById('sheetNameInput').value.trim();
+      if (!sheetName) { alert('Informe o nome da guia.'); return; }
+      if (!confirm(`Deseja importar dados da guia "${sheetName}"? Isso irá sobrescrever a tabela atual.`)) return;
+      disableSheetButtons(true);
+      if (!isGasAvailable) {
+        alert('Simulação local: sem dados para importar.');
+        disableSheetButtons(false);
+        return;
+      }
+      google.script.run.withSuccessHandler(importarDadosSucesso).withFailureHandler(onSheetError).importarDados(sheetName);
+    }
+
+    function importarDadosSucesso(data) {
+      if (!Array.isArray(data) || data.length === 0) { alert('Nenhum dado encontrado na guia.'); disableSheetButtons(false); return; }
+      const table = document.getElementById('musicTable');
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+      thead.innerHTML = '';
+      tbody.innerHTML = '';
+      const trHead = document.createElement('tr');
+      data[0].forEach(h => { const th = document.createElement('th'); th.setAttribute('contenteditable', 'true'); th.textContent = h; trHead.appendChild(th); });
+      thead.appendChild(trHead);
+      for (let i = 1; i < data.length; i++) {
+        const tr = document.createElement('tr');
+        data[i].forEach(cellText => { const td = document.createElement('td'); td.setAttribute('contenteditable', 'true'); td.setAttribute('tabindex', '0'); td.textContent = cellText; tr.appendChild(td); });
+        tbody.appendChild(tr);
+      }
+      saveData();
+      updatePagination();
+      alert('Dados importados do Google Sheets com sucesso!');
+      disableSheetButtons(false);
+    }
+
+    function closeDialog(dialogId) { document.getElementById(dialogId).style.display = 'none'; disableSheetButtons(false); }
+
+    function disableSheetButtons(disable) {
+      const buttons = document.querySelectorAll('.sidebar button[onclick*="Sheets"], .sidebar button[onclick*="Sheet"]');
+      buttons.forEach(button => { button.disabled = disable; button.style.opacity = disable ? '0.7' : '1'; button.style.cursor = disable ? 'not-allowed' : 'pointer'; });
+      const input = document.getElementById('sheetNameInput');
+      if (input) input.disabled = disable;
+    }
+  </script>
+</body>
+</html>
