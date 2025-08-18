@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca de Partituras - Piano</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>📚 NBM - Biblioteca de Partituras - PDF</h2>
+    <p><a href="../../../content/alunos/Lista_Geral_Arquivo/Lista_Geral_Arquivo.html" class="voltar-link">← Home</a></p>
+
+    <div class="controls-container">
+        <div class="select-container">
+            <select id="nivel1" disabled>
+                <option value="">Carregando...</option>
+            </select>
+            <select id="nivel2" disabled>
+                <option value="">Selecione primeiro</option>
+            </select>
+            <select id="nivel3" disabled>
+                <option value="">Selecione primeiro</option>
+            </select>
+            <select id="nivel4" disabled>
+                <option value="">Selecione primeiro</option>
+            </select>
+            <select id="nivel5" disabled>
+                <option value="">Selecione primeiro</option>
+            </select>
+            <select id="nivel6" disabled>
+                <option value="">Selecione primeiro</option>
+            </select>
+        </div>
+        
+        <div class="search-and-reset">
+            <input type="text" id="searchInput" placeholder="🔍 Pesquisar partituras..." disabled>
+            <button id="resetFiltersBtn">Limpar Tudo</button>
+        </div>
+    </div>
+
+    <div class="filter-group">
+        <label for="displayOptionsCommon">Mostrar (Campos):</label>
+        <select id="displayOptionsCommon">
+            <option value="name">Nome</option>
+            <option value="name,composer">Nome, Compositor</option>
+            <option value="name,composer,id">Nome, Compositor, ID</option>
+            <option value="name,composer,id,level">Nome, Compositor, ID, Dificuldade</option>
+            <option value="name,composer,id,level,instrument">Nome, Compositor, ID, Dificuldade, Instrumento</option>
+            <option value="name,composer,id,level,instrument,nota">Nome, Compositor, ID, Dificuldade, Instrumento, Nota</option>
+        </select>
+
+        <label for="layoutOptions">Layout:</label>
+        <select id="layoutOptions">
+            <option value="list">Lista</option>
+            <option value="gallery">Galeria</option>
+        </select>
+    </div>
+
+
+    <div id="loadingIndicator" class="loading-indicator">
+        </div>
+
+    <div id="musicList">
+        <div class="info-message">Selecione um instrumento para começar</div>
+    </div>
+
+    <div class="file-viewer-container"> 
+        <p class="no-pdf">Nenhum arquivo selecionado</p>
+        <div class="file-info">
+            <span id="fileType">Tipo: N/A</span> 
+        </div>
+        <div class="pdf-actions">
+            <button id="downloadPdf">Baixar</button>
+            <button id="printBtn">Imprimir</button> </div>
+        <audio id="audioPlayer" controls style="display:none;"></audio>
+        <iframe id="pdfViewer" frameborder="0"></iframe>
+    </div>
+
+    <br><br><br><br><br><br>
+    <script src="js/nivel1.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

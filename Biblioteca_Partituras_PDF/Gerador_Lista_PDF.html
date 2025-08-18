@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Lista de PDFs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      margin-top: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin: 10px 0;
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-family: Arial, sans-serif;
+    }
+    .section {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerador de Lista de PDFs Musicais</h1>
+  <p><a href="../../../content/alunos/Lista_Geral_Arquivo/Lista_Geral_Arquivo.html" class="voltar-link">← Home</a></p>
+  <div class="section">
+    <h2>Entrada de Nomes</h2>
+    <textarea id="nomesInput" placeholder="Cole ou digite os nomes aqui, um por linha...
+Exemplo: 23600 - Richard Wagner - Bridal March - A"></textarea>
+    <button onclick="processarNomes()">Processar Nomes</button>
+  </div>
+  
+  <div class="section">
+    <h2>Selecionar Pasta com PDFs</h2>
+    <button onclick="selecionarPasta()">Selecionar Pasta</button>
+  </div>
+  
+  <h2>Lista de Músicas</h2>
+  <pre id="listaMusicas"></pre>
+
+  <script>
+    async function selecionarPasta() {
+      try {
+        const pasta = await window.showDirectoryPicker();
+        const listaMusicas = [];
+
+        for await (const entry of pasta.values()) {
+          if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
+            const fileName = entry.name;
+            
+            // Extrai informações do nome do arquivo
+            const match = fileName.match(/^(\d+) - (.+?) - (.+?) - ([A-Za-z0-9]+)\.pdf$/i);
+            
+            if (match) {
+              const [_, numero, nomeMusica, compositor, nivel] = match;
+              
+              listaMusicas.push({
+                name: `${numero} - ${nomeMusica}`,
+                file: `pdf/${fileName}`,
+                composer: compositor,
+                level: nivel
+              });
+            } else {
+              console.warn(`Formato inválido: ${fileName}`);
+            }
+          }
+        }
+
+        // Ordena por número
+        listaMusicas.sort((a, b) => {
+          const numA = parseInt(a.name.split(' - ')[0]);
+          const numB = parseInt(b.name.split(' - ')[0]);
+          return numA - numB;
+        });
+
+        // Gera a saída formatada
+        const linhas = listaMusicas.map(musica => {
+          return `  { name: "${musica.name}", file: "${musica.file}", composer: "${musica.composer}", level: "${musica.level}" },`;
+        });
+
+        document.getElementById('listaMusicas').textContent = linhas.join('\n');
+        
+      } catch (error) {
+        console.error('Erro:', error);
+        alert('Ocorreu um erro ao processar a pasta. Verifique o console para detalhes.');
+      }
+    }
+    
+    function processarNomes() {
+      const nomesInput = document.getElementById('nomesInput').value;
+      const linhas = nomesInput.split('\n').filter(linha => linha.trim() !== '');
+      
+      const listaMusicas = linhas.map(linha => {
+        // Extrai número, compositor, música e nível
+        const match = linha.match(/^(\d+) - (.+?) - (.+?) - ([A-Za-z0-9]+)$/);
+        
+        if (match) {
+          const [_, numero, compositor, musica, nivel] = match;
+          const nomeFormatado = `${numero} - ${compositor}`;
+          const arquivoPdf = `pdf/${linha.trim()}.pdf`;
+          
+          return `  { name: "${nomeFormatado}", file: "${arquivoPdf}", composer: "${musica}", level: "${nivel}" },`;
+        } else {
+          console.warn(`Formato inválido: ${linha}`);
+          return `  // Formato inválido: ${linha}`;
+        }
+      });
+      
+      document.getElementById('listaMusicas').textContent = listaMusicas.join('\n');
+    }
+  </script>
+</body>
+</html>

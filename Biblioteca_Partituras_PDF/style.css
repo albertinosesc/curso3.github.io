@@ -1,0 +1,444 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+h2 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e1e4e8;
+}
+
+.select-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+select {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13%205.7L146.2%20202.7%2018.5%2075.1a17.6%2017.6%200%200%200-24.7%2024.9l130.8%20129.9c.7%200%201.3.4%201.7.4s1-.4%201.7-.4L287%2094.3a17.6%2017.6%200%200%200%200-24.9z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+}
+
+select:disabled {
+    background-color: #f1f3f5;
+    cursor: not-allowed;
+    color: #999;
+}
+
+select:hover:not(:disabled) {
+    border-color: #999;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+}
+
+#searchInput {
+    width: calc(100% - 30px);
+    padding: 12px 15px;
+    margin: 20px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+#musicList {
+    margin-top: 20px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-height: 500px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    padding: 0 5px 5px 0;
+}
+
+.music-item {
+    padding: 15px;
+    background-color: white;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.music-item:hover {
+    background-color: #f0f7ff;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.music-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.music-info strong {
+    font-size: 1.1em;
+    color: #0056b3;
+    margin-bottom: 5px;
+}
+
+.composer, .reference, .level, .instrument, .book {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.formats {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #eee;
+    width: 100%;
+}
+
+.file-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 2px 5px 2px 0;
+    border-radius: 5px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+}
+
+.file-badge.pdf { background-color: #e53935; color: white; border-color: #e53935; }    /* Vermelho */
+.file-badge.mp3 { background-color: #fb8c00; color: white; border-color: #fb8c00; }    /* Laranja */
+.file-badge.mid { background-color: #fdd835; color: black; border-color: #fdd835; }   /* Amarelo */
+.file-badge.abc { background-color: #43a047; color: white; border-color: #43a047; }   /* Verde */
+.file-badge.xml { background-color: #1e88e5; color: white; border-color: #1e88e5; }    /* Azul */
+.file-badge.mgu { background-color: #3949ab; color: white; border-color: #3949ab; }     /* Anil */
+.file-badge.gp5 { background-color: #8e24aa; color: white; border-color: #8e24aa; }    /* Violeta */
+
+.file-badge.active {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7), 0 0 0 6px var(--active-color);
+    transform: scale(1.05);
+    position: relative;
+    z-index: 1;
+}
+
+.file-badge.pdf.active { --active-color: #c62828; }    /* Vermelho escuro */
+.file-badge.mp3.active { --active-color: #ef6c00; }    /* Laranja escuro */
+.file-badge.mid.active { --active-color: #fbc02d; }    /* Amarelo escuro */
+.file-badge.abc.active { --active-color: #2e7d32; }    /* Verde escuro */
+.file-badge.xml.active { --active-color: #1565c0; }    /* Azul escuro */
+.file-badge.mgu.active { --active-color: #283593; }     /* Anil escuro */
+.file-badge.gp5.active { --active-color: #6a1b9a; }    /* Violeta escuro */
+
+
+.info-message, .error-message {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.1em;
+    color: #555;
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 6px;
+    margin-top: 20px;
+}
+
+.error-message {
+    background-color: #ffebee;
+    border-color: #ffcdd2;
+    color: #d32f2f;
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+    color: #666;
+    display: none;
+}
+
+.file-viewer-container {
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    text-align: center;
+}
+
+#pdfViewer {
+    width: 100%;
+    height: 600px;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    display: none;
+}
+
+#audioPlayer {
+    width: 100%;
+    height: 50px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.file-viewer-container {
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    text-align: center;
+}
+
+.no-pdf {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.pdf-actions {
+    margin-top: 15px;
+    display: none;
+    justify-content: center;
+    gap: 15px;
+}
+
+.pdf-actions button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.pdf-actions button:hover {
+    background-color: #218838;
+}
+
+.file-info {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.file-type {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 8px;
+    color: #555;
+}
+
+@media (max-width: 768px) {
+    .select-container {
+        grid-template-columns: 1fr;
+    }
+    #musicList {
+        grid-template-columns: 1fr;
+    }
+}
+
+.search-and-reset {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+#searchInput {
+    flex-grow: 1;
+}
+
+#resetFiltersBtn {
+    padding: 12px 15px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+#resetFiltersBtn:hover {
+    background-color: #c82333;
+}
+
+.controls-container {
+    margin-bottom: 20px;
+}
+
+.loading-indicator {
+    display: none;
+    text-align: center;
+    padding: 30px 0;
+    font-size: 1.2em;
+    color: #555;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    min-height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.loading-indicator::before {
+    content: '';
+    width: 40px;
+    height: 40px;
+    border: 5px solid #ccc;
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-indicator::after {
+    content: 'Carregando partituras...';
+    margin-top: 10px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estilos para a lista padrão (list-view ou padrão do flex) */
+#musicList.list-view {
+    display: flex;
+    flex-direction: column; /* Itens um abaixo do outro */
+    gap: 10px; /* Espaço entre os itens */
+    /* Outros estilos de lista se necessários */
+}
+
+#musicList.list-view .music-item {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 4px;
+    border-radius: 5px;
+    display: flex;
+    flex-wrap: wrap; /* Permite que os badges quebrem linha se necessário */
+    align-items: center;
+    justify-content: space-between; /* Move os badges para a direita */
+}
+
+#musicList.list-view .music-info {
+    flex-grow: 1; /* Ocupa o máximo de espaço possível */
+    display: flex;
+    flex-direction: column; /* Campos um abaixo do outro */
+    line-height: 1.4;
+}
+
+#musicList.list-view .formats {
+    margin-left: 15px; /* Espaço entre info e badges */
+    display: flex;
+    gap: 5px;
+}
+
+#musicList.list-view .music-info div {
+    font-size: 1.0em;
+    color: #555;
+    margin-top: 2px;
+}
+/* --- Estilos para o layout de Galeria --- */
+#musicList.gallery-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Colunas responsivas */
+    gap: 20px; /* Espaço entre as grades */
+    padding: 10px;
+}
+
+#musicList.gallery-view .music-item {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column; /* Conteúdo em coluna */
+    justify-content: space-between; /* Para empurrar os badges para baixo */
+}
+
+
+
+#musicList.gallery-view .music-info strong {
+    font-size: 1.1em;
+    display: block; /* Garante que o nome ocupe uma linha */
+    margin-bottom: 5px;
+}
+
+#musicList.gallery-view .music-info div {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 2px;
+}
+
+#musicList.gallery-view .formats {
+    display: flex;
+    flex-wrap: wrap; /* Permite que os badges quebrem linha */
+    justify-content: center; /* Centraliza os badges na galeria */
+    gap: 5px;
+    margin-top: auto; /* Empurra os badges para o final do card */
+}
+
+/* Estilos para os badges (independentes do layout) */
+.file-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    white-space: nowrap; /* Evita quebras de linha nos badges */
+}
+
+.file-badge.pdf { background-color: #dc3545; color: white; }      /* Vermelho */
+.file-badge.mp3 { background-color: #fd7e14; color: white; }      /* Laranja */
+.file-badge.mid { background-color: #ffc107; color: #333; }       /* Amarelo */
+.file-badge.abc { background-color: #28a745; color: white; }      /* Verde */
+.file-badge.xml { background-color: #007bff; color: white; }      /* Azul */
+.file-badge.gp5 { background-color: #4b0082; color: white; }       /* Anil */
+.file-badge.mgu { background-color: #8e24aa; color: white; }      /* Violeta */
+
+
+.file-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.file-badge.active {
+    outline: 2px solid #000; /* Borda preta para o ativo */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.3);
+}
